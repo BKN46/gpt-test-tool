@@ -53,7 +53,7 @@ if text:
         for line_text in st.session_state.chat.get_chat_stream(text, max_time=max_time, yield_time=0.5):
             used_time = (time.time() - start_time)
             now_text.progress(
-                used_time / max_time,
+                max(used_time / max_time, 1),
                 text=f"[{used_time:.2f} sec] {line_text}",
             )
     except requests.exceptions.Timeout:
