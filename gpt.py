@@ -105,7 +105,8 @@ class ChatGPT:
                     print("\n[Generate time exceeded]", end="")
                 break
         self.add_gpt_reply(res_text.strip())
-        return res_text.strip()
+        if not yield_time:
+            return res_text.strip()
 
 
 if __name__ == "__main__":
