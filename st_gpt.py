@@ -44,7 +44,8 @@ with st.expander("Settings"):
     if st.button("Reset"):
         st.session_state.chat = gpt.ChatGPT(settings=preset_text)
 
-text = st.text_input("Input", value="", placeholder="Input", label_visibility="hidden")
+text = st.text_input("Input text:", value="", placeholder="Input")
+st.divider()
 if text:
     now_text = st.progress(0, text="")
     start_time = time.time()
@@ -62,5 +63,5 @@ if text:
     except Exception as e:
         st.error(f"[Exception occur]{repr(e)}")
 
-markdown_result = "\n\n".join([f"*{x['role']}*\n```plain\n{x['content']}\n```" for x in st.session_state.chat.content[::-1]])
+markdown_result = "\n\n".join([f"#### {x['role'].capitalize()}:\n\n{x['content']}\n" for x in st.session_state.chat.content[::-1]])
 st.markdown(markdown_result)
