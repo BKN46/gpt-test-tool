@@ -153,3 +153,4 @@ cython_debug/
 
 api_key
 credentials.yaml
+proxies.py

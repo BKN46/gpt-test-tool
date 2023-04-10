@@ -11,7 +11,11 @@ if not api_key:
     print("Please put the api_key in 'api_key' file")
     exit()
 
-proxies = {}
+try:
+    from proxies import proxies
+except Exception as e:
+    proxies = {}
+
 header = {"Authorization": f"Bearer {api_key}"}
 url = "https://api.openai.com/v1"
 

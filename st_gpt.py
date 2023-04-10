@@ -32,10 +32,12 @@ st.set_page_config(
     page_title="GPT Test Page",
 )
 
-st.session_state.chat = gpt.ChatGPT()
 
 if not login():
     st.stop()
+
+if 'chat' not in st.session_state:
+    st.session_state.chat = gpt.ChatGPT()
 
 with st.expander("Settings"):
     max_time = int(st.number_input("Max generate time", value=120, min_value=1, max_value=600, step=1))
