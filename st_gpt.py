@@ -8,6 +8,7 @@ import streamlit as st
 import streamlit_authenticator as stauth
 
 import gpt
+from presets import presets
 
 def login():
     file_path = 'credentials.yaml'
@@ -38,8 +39,10 @@ if not login():
 
 with st.expander("Settings"):
     max_time = int(st.number_input("Max generate time", value=120, min_value=1, max_value=600, step=1))
-    if st.button("Clear"):
-        st.session_state.chat = gpt.ChatGPT()
+    preset_title = st.selectbox("Assisstant preset", (x for x in presets.keys())) or 'none'
+    preset_text = presets.get(preset_title, '')
+    if st.button("Reset"):
+        st.session_state.chat = gpt.ChatGPT(settings=preset_text)
 
 text = st.text_input("Input", value="", placeholder="Input", label_visibility="hidden")
 if text:
@@ -59,5 +62,5 @@ if text:
     except Exception as e:
         st.error(f"[Exception occur]{repr(e)}")
 
-markdown_result = "\n\n".join([f"*{x['role']}*\n> {x['content']}" for x in st.session_state.chat.content[::-1]])
+markdown_result = "\n\n".join([f"*{x['role']}*\n```plain\n{x['content']}\n```" for x in st.session_state.chat.content[::-1]])
 st.markdown(markdown_result)

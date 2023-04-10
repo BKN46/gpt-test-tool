@@ -17,9 +17,9 @@ url = "https://api.openai.com/v1"
 
 
 class ChatGPT:
-    content = []
 
     def __init__(self, settings: str = "") -> None:
+        self.content = []
         if settings:
             self.content.append({"role": "system", "content": settings})
 
