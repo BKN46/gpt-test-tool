@@ -75,42 +75,53 @@ class ChatGPT:
             "stream": True,
             "max_tokens": max_tokens,
         }
-        res = requests.post(
-            url + path,
-            headers=header,
-            json=body,
-            proxies=proxies,
-            stream=True,
-            timeout=10,
-        )
+        retry_times = 5
         res_text = ""
-        start_time = time.time()
-        single_line_time = start_time
-        for line in res.iter_lines():
-            # filter out keep-alive new lines
-            if line:
-                decoded_line = line.decode("utf-8")
-                if decoded_line.startswith("data:") and not decoded_line.endswith(
-                    "[DONE]"
-                ):
-                    data = json.loads(decoded_line[5:].strip())
-                    if "content" in data["choices"][0]["delta"]:
-                        tmp_res = data["choices"][0]["delta"]["content"]
-                        if not res_text and len(tmp_res.strip()) == 0:
-                            continue
-                        res_text += tmp_res
+        while retry_times > 0:
+            try:
+                res = requests.post(
+                    url + path,
+                    headers=header,
+                    json=body,
+                    proxies=proxies,
+                    stream=True,
+                    timeout=10,
+                )
+                start_time = time.time()
+                single_line_time = start_time
+                for line in res.iter_lines(): # type: ignore
+                    # filter out keep-alive new lines
+                    if line:
+                        decoded_line = line.decode("utf-8")
+                        if decoded_line.startswith("data:") and not decoded_line.endswith(
+                            "[DONE]"
+                        ):
+                            data = json.loads(decoded_line[5:].strip())
+                            if "content" in data["choices"][0]["delta"]:
+                                tmp_res = data["choices"][0]["delta"]["content"]
+                                if not res_text and len(tmp_res.strip()) == 0:
+                                    continue
+                                res_text += tmp_res
+                                if watch_output:
+                                    print(tmp_res, end="", flush=True)
+                                if yield_time and time.time() - single_line_time > yield_time:
+                                    yield res_text.strip()
+                                    single_line_time = time.time()
+                    if time.time() - start_time > max_time:
                         if watch_output:
-                            print(tmp_res, end="", flush=True)
-                        if yield_time and time.time() - single_line_time > yield_time:
-                            yield res_text.strip()
-                            single_line_time = time.time()
-            if time.time() - start_time > max_time:
-                if watch_output:
-                    print("\n[Generate time exceeded]", end="")
+                            print("\n[Generate time exceeded]", end="")
+                        break
                 break
-        self.add_gpt_reply(res_text.strip())
+            except Exception as e:
+                    retry_times -= 1
+                    if yield_time:
+                        yield f"Retrying... {retry_times} times"
+                    time.sleep(5)
+        if retry_times == 0:
+            raise Exception("ChatGPT service may have problem.")
+        self.add_gpt_reply(res_text.strip()) # type: ignore
         if not yield_time:
-            return res_text.strip()
+            return res_text.strip() # type: ignore
 
 
 if __name__ == "__main__":
