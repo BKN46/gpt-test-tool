@@ -85,6 +85,8 @@ with tab2:
     min_line_num, max_line_num = int(srt_lines[0][0]), int(srt_lines[-1][0])
     from_line = int(st.number_input("From line", value=min_line_num, min_value=min_line_num, max_value=max_line_num, step=1))
     to_line = int(st.number_input("To line", value=max_line_num, min_value=from_line, max_value=max_line_num, step=1))
+    use_model = st.selectbox("Model", ('gpt-4', 'gpt-3.5-turbo'), index=0)
+    with_context = st.checkbox('Use context')
     export_srt_text = ""
     if st.button("Start"):
         trans_lines = []
@@ -102,7 +104,10 @@ with tab2:
                 translate_time = translate_text_data[1]
                 translate_text = "\n".join(translate_text_data[2:])
                 start_time = time.time()
-                for line_text in st.session_state.chat.get_chat_stream(translate_text, max_time=max_time, yield_time=0.1):
+                if not with_context:
+                    st.session_state.chat = gpt.ChatGPT(settings=presets.get('translate', ''))
+                used_time = None
+                for line_text in st.session_state.chat.get_chat_stream(translate_text, max_time=max_time, yield_time=0.1, model=use_model):
                     used_time = (time.time() - start_time)
                     time_left_text = ""
                     if len(all_used_time) > 0:
@@ -116,19 +121,23 @@ with tab2:
                     )
                     if len(st.session_state.chat.content) > 5:
                         st.session_state.chat.content.pop(1)
-                all_used_time.append(used_time) # type: ignore
-                res = st.session_state.chat.content[-1]['content']
-                translate_text.replace('\n', '\n\n')
-                markdown_result = f"`{translate_text_data[0]} {translate_time}`\n\n<strong>{translate_text}</strong>\n\n{res}"
-                export_srt_text += f"{translate_text_data[0]}\n{translate_time}\n{res}\n\n"
-                st.markdown(markdown_result, unsafe_allow_html=True)
+                if not used_time:
+                    st.error(f"[Request error] {st.session_state.chat}")
+                else:
+                    all_used_time.append(used_time)
+                    res = st.session_state.chat.content[-1]['content']
+                    translate_text.replace('\n', '\n\n')
+                    markdown_result = f"`{translate_text_data[0]} {translate_time}`\n\n<strong>{translate_text}</strong>\n\n{res}"
+                    export_srt_text += f"{translate_text_data[0]}\n{translate_time}\n{res}\n\n"
+                    st.markdown(markdown_result, unsafe_allow_html=True)
         except Exception as e:
             st.error(f"[Exception occur] You can download exsisted srt on below.")
             st.exception(e)
 
         st.download_button(
             label="Download SRT",
-            data=export_srt_text.encode("utf-8").decode("gb18030"),
+            data=export_srt_text,
+            # data=export_srt_text.encode("utf-8").decode("gb18030"),
             file_name="translate.srt",
             mime="text/plain",
         )

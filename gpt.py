@@ -51,7 +51,7 @@ class ChatGPT:
             "messages": [{"role": "user", "content": text}],
         }
         res = requests.post(
-            url + path, headers=header, json=body, timeout=15, proxies=proxies
+            url + path, headers=header, json=body, timeout=15, proxies=proxies, verify=False
         )
         try:
             return res.json()["choices"][0]["message"]["content"].strip()
@@ -86,6 +86,7 @@ class ChatGPT:
                     proxies=proxies,
                     stream=True,
                     timeout=10,
+                    verify=False
                 )
                 start_time = time.time()
                 single_line_time = start_time
